@@ -96,8 +96,6 @@ export default function WebClonerPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Nav />
-
       <main className="flex-grow pt-24 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="fixed inset-0 pointer-events-none">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(0,255,255,0.03),transparent_70%)]" />

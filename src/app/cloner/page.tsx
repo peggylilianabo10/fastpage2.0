@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Nav from "@/components/Nav";
+import { useState, useEffect } from "react";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -390,8 +389,6 @@ export default function ClonerPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Nav />
-
       <main className="flex-grow pt-24 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background Effects */}
         <div className="fixed inset-0 pointer-events-none">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -256,8 +255,6 @@ export default function BuilderPage() {
 
   return (
     <div className="min-h-screen bg-[#030712] text-white flex flex-col">
-      <Nav />
-      
       <div className="flex-grow flex pt-20">
         {/* Left Sidebar - Toolbar */}
         <aside className="w-80 border-r border-white/5 bg-zinc-900/50 backdrop-blur-xl fixed left-0 top-20 bottom-0 z-30 hidden lg:flex flex-col">
