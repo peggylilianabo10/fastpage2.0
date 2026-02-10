@@ -3,7 +3,9 @@
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useLanguage } from "@/context/LanguageContext";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Session = {
   email?: string;
@@ -14,6 +16,8 @@ export default function Nav() {
   const [session, setSession] = useState<Session | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const saved =
@@ -40,10 +44,10 @@ export default function Nav() {
   }, [isOpen]);
 
   const navLinks = [
-    { name: "Inicio", href: "/", emoji: "" },
-    { name: "Creador", href: "/builder", emoji: "" },
-    { name: "Clonador", href: "/cloner", emoji: "" },
-    { name: "Hub", href: "/hub", emoji: "" },
+    { name: t("nav.home"), href: "/", emoji: "" },
+    { name: t("nav.builder"), href: "/builder", emoji: "" },
+    { name: t("nav.cloner"), href: "/cloner", emoji: "" },
+    { name: t("nav.hub"), href: "/hub", emoji: "" },
   ];
 
   return (
@@ -53,22 +57,22 @@ export default function Nav() {
         {/* Logo - Top Left */}
         <div className="fixed top-8 left-8 z-50">
           <Link href="/" className="flex items-center gap-2 hover-vibrate">
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black font-bold text-lg">
+            <div className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-white flex items-center justify-center text-white dark:text-black font-bold text-lg">
               C
             </div>
           </Link>
         </div>
 
         {/* Center Pill Nav */}
-        <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 glass-pill px-2 py-2 flex items-center gap-1">
+        <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 glass-pill px-2 py-2 flex items-center gap-1 border border-black/5 dark:border-white/10 bg-white/50 dark:bg-black/50 backdrop-blur-md">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
                 pathname === link.href
-                  ? "bg-white/10 text-white"
-                  : "text-muted hover:text-white hover:bg-white/5"
+                  ? "bg-zinc-900 dark:bg-white/10 text-white"
+                  : "text-muted-foreground dark:text-white hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
               }`}
             >
               {link.name}
@@ -81,7 +85,7 @@ export default function Nav() {
           {!session ? (
             <Link
               href="/auth?tab=register"
-              className="flex items-center gap-2 text-sm font-medium hover:text-white text-muted transition-colors"
+              className="flex items-center gap-2 text-sm font-medium hover:text-black dark:hover:text-white text-muted-foreground dark:text-muted transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -97,7 +101,7 @@ export default function Nav() {
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-              Crear Cuenta
+              {t("nav.create_account")}
             </Link>
           ) : (
             <div className="flex items-center gap-4">
@@ -110,7 +114,7 @@ export default function Nav() {
                 }}
                 className="text-sm text-muted hover:text-red-400"
               >
-                Salir
+                {t("nav.logout")}
               </button>
             </div>
           )}
@@ -127,40 +131,59 @@ export default function Nav() {
             <span>Fast Page</span>
           </Link>
 
-          <button className="p-2 text-white" onClick={() => setIsOpen(!isOpen)}>
-            {isOpen ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-              </svg>
-            )}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => router.back()}
+              className="p-2 text-white/70 hover:text-white transition-colors active:scale-95"
+              aria-label="Go back"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <button
+              onClick={() => window.history.forward()}
+              className="p-2 text-white/70 hover:text-white transition-colors active:scale-95"
+              aria-label="Go forward"
+            >
+              <ChevronRight size={24} />
+            </button>
+            <button
+              className="p-2 text-white"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              {isOpen ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              )}
+            </button>
+          </div>
         </header>
 
         {/* Mobile Menu Overlay - Portaled to body to avoid clipping */}
@@ -192,7 +215,7 @@ export default function Nav() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="text-2xl font-medium py-4 border-b border-white/5 text-muted hover:text-white transition-colors"
+                    className="text-2xl font-medium py-4 border-b border-white/5 text-zinc-600 dark:text-white hover:text-white transition-colors"
                   >
                     {link.name}
                   </Link>
@@ -203,9 +226,9 @@ export default function Nav() {
                 {!session ? (
                   <Link
                     href="/auth?tab=register"
-                    className="btn btn-primary w-full py-4 text-lg"
+                    className="btn btn-primary w-full py-4 text-lg rounded-full"
                   >
-                    Comenzar Ahora
+                    {t("nav.start_now")}
                   </Link>
                 ) : (
                   <button
@@ -214,9 +237,9 @@ export default function Nav() {
                       localStorage.removeItem("fp_session");
                       window.location.href = "/auth";
                     }}
-                    className="btn btn-secondary w-full py-4 text-lg text-red-400"
+                    className="btn btn-secondary w-full py-4 text-lg text-red-400 rounded-full"
                   >
-                    Cerrar Sesión
+                    {t("nav.logout")}
                   </button>
                 )}
               </div>

@@ -3,13 +3,15 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-
-type User = {
-  email: string;
-  password: string;
-  name: string;
-  createdAt: number;
-};
+import { auth, db } from "@/lib/firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  updateProfile,
+} from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function AuthPage() {
   return (
@@ -23,7 +25,6 @@ function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<"login" | "register">("login");
-  const [users, setUsers] = useState<User[]>([]);
   const [toast, setToast] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -33,17 +34,12 @@ function AuthContent() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    const u = localStorage.getItem("fp_users");
-    setUsers(u ? JSON.parse(u) : []);
-  }, []);
-
   const showToast = (message: string) => {
     setToast(message);
-    setTimeout(() => setToast(""), 1800);
+    setTimeout(() => setToast(""), 3000);
   };
 
-  const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const name = String(form.get("name") || "").trim();
@@ -51,54 +47,132 @@ function AuthContent() {
       .trim()
       .toLowerCase();
     const password = String(form.get("password") || "");
+
     if (!email || !password || !name) {
       showToast("Completa todos los campos");
       return;
     }
-    if (users.find((u) => u.email === email)) {
-      showToast("Ya existe una cuenta con ese email");
-      return;
+
+    try {
+      // 1. Crear usuario en Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const user = userCredential.user;
+
+      // 2. Actualizar perfil (nombre)
+      await updateProfile(user, { displayName: name });
+
+      // 3. Guardar en Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        name,
+        email,
+        createdAt: Date.now(),
+        uid: user.uid,
+        role: "user", // Default role
+      });
+
+      // 4. Guardar sesión local (para compatibilidad)
+      localStorage.setItem(
+        "fp_session",
+        JSON.stringify({ email, name, uid: user.uid }),
+      );
+
+      showToast("¡Cuenta creada exitosamente!");
+      setTimeout(() => router.push("/hub"), 1500);
+    } catch (error: any) {
+      console.error(error);
+      if (error.code === "auth/email-already-in-use") {
+        showToast("El email ya está registrado");
+      } else if (error.code === "auth/weak-password") {
+        showToast("La contraseña es muy débil (mínimo 6 caracteres)");
+      } else if (error.code === "auth/configuration-not-found") {
+        showToast("Error de configuración: Habilita Authentication en Firebase Console");
+      } else {
+        showToast("Error: " + error.message);
+      }
     }
-    const user = { email, password, name, createdAt: Date.now() };
-    const nextUsers = [...users, user];
-    setUsers(nextUsers);
-    localStorage.setItem("fp_users", JSON.stringify(nextUsers));
-    localStorage.setItem("fp_session", JSON.stringify({ email, name }));
-    router.push("/hub");
   };
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const email = String(form.get("email") || "")
       .trim()
       .toLowerCase();
     const password = String(form.get("password") || "");
-    const user = users.find(
-      (u) => u.email === email && u.password === password,
-    );
-    if (!user) {
-      showToast("Credenciales inválidas");
+
+    if (!email || !password) {
+      showToast("Ingresa email y contraseña");
       return;
     }
-    localStorage.setItem(
-      "fp_session",
-      JSON.stringify({ email: user.email, name: user.name }),
-    );
-    router.push("/hub");
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const user = userCredential.user;
+
+      localStorage.setItem(
+        "fp_session",
+        JSON.stringify({
+          email: user.email,
+          name: user.displayName || "Usuario",
+          uid: user.uid,
+        }),
+      );
+
+      router.push("/hub");
+    } catch (error: any) {
+      console.error(error);
+      if (
+        error.code === "auth/user-not-found" ||
+        error.code === "auth/wrong-password" ||
+        error.code === "auth/invalid-credential"
+      ) {
+        showToast("Credenciales inválidas");
+      } else {
+        showToast("Error al iniciar sesión: " + error.message);
+      }
+    }
   };
 
-  const handleGoogleLogin = () => {
-    // Simulación de login con Google
-    const fakeGoogleUser = {
-      email: "user@gmail.com",
-      name: "Google User",
-    };
-    localStorage.setItem("fp_session", JSON.stringify(fakeGoogleUser));
-    showToast("¡Sesión iniciada con Google!");
-    setTimeout(() => {
+  const handleGoogleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Guardar/Actualizar en Firestore
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          name: user.displayName,
+          email: user.email,
+          lastLogin: Date.now(),
+          uid: user.uid,
+        },
+        { merge: true },
+      );
+
+      localStorage.setItem(
+        "fp_session",
+        JSON.stringify({
+          email: user.email,
+          name: user.displayName,
+          uid: user.uid,
+        }),
+      );
+
       router.push("/hub");
-    }, 1000);
+    } catch (error: any) {
+      console.error(error);
+      showToast("Error con Google: " + error.message);
+    }
   };
 
   return (
@@ -118,10 +192,18 @@ function AuthContent() {
               Fast Page
             </span>
           </Link>
-          <p className="text-muted mt-3">
-            {tab === "login"
-              ? "Bienvenido de nuevo, creador."
-              : "Comienza a construir tu imperio digital."}
+          <p className="text-zinc-400 dark:text-white mt-3">
+            {tab === "login" ? (
+              <>
+                Bienvenido de nuevo,{" "}
+                <span className="text-gold-glow">creador</span>.
+              </>
+            ) : (
+              <>
+                Comienza a construir tu{" "}
+                <span className="text-gold-glow">imperio digital</span>.
+              </>
+            )}
           </p>
         </div>
 
@@ -131,7 +213,7 @@ function AuthContent() {
           <div className="grid grid-cols-2 p-1 bg-black/20 rounded-xl mb-6">
             <button
               onClick={() => setTab("login")}
-              className={`py-3 text-sm font-medium rounded-lg transition-all duration-300 ${
+              className={`py-3 text-sm font-medium rounded-full transition-all duration-300 ${
                 tab === "login"
                   ? "bg-white/10 text-white shadow-lg border border-white/5"
                   : "text-muted hover:text-white hover:bg-white/5"
@@ -141,7 +223,7 @@ function AuthContent() {
             </button>
             <button
               onClick={() => setTab("register")}
-              className={`py-3 text-sm font-medium rounded-lg transition-all duration-300 ${
+              className={`py-3 text-sm font-medium rounded-full transition-all duration-300 ${
                 tab === "register"
                   ? "bg-white/10 text-white shadow-lg border border-white/5"
                   : "text-muted hover:text-white hover:bg-white/5"
@@ -189,7 +271,7 @@ function AuthContent() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-white transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-white hover:text-white transition-colors"
                     >
                       {showPassword ? (
                         <svg
@@ -227,7 +309,7 @@ function AuthContent() {
                 </div>
                 <button
                   type="submit"
-                  className="btn-deluxe w-full py-3.5 rounded-xl text-black font-bold text-lg shadow-lg hover:shadow-yellow-500/20 mt-2"
+                  className="btn-deluxe w-full py-3.5 rounded-full text-black font-bold text-lg shadow-lg hover:shadow-yellow-500/20 mt-2"
                 >
                   Entrar
                 </button>
@@ -273,7 +355,7 @@ function AuthContent() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-white transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-white hover:text-white transition-colors"
                     >
                       {showPassword ? (
                         <svg
@@ -311,7 +393,7 @@ function AuthContent() {
                 </div>
                 <button
                   type="submit"
-                  className="btn-deluxe w-full py-3.5 rounded-xl text-black font-bold text-lg shadow-lg hover:shadow-yellow-500/20 mt-2"
+                  className="btn-deluxe w-full py-3.5 rounded-full text-black font-bold text-lg shadow-lg hover:shadow-yellow-500/20 mt-2"
                 >
                   Crear cuenta
                 </button>
@@ -330,7 +412,7 @@ function AuthContent() {
             {/* Social Login */}
             <button
               onClick={handleGoogleLogin}
-              className="w-full bg-white text-black hover:bg-gray-200 transition-colors py-3.5 rounded-xl font-medium flex items-center justify-center gap-3 shadow-lg"
+              className="w-full bg-white text-black hover:bg-gray-200 transition-colors py-3.5 rounded-full font-medium flex items-center justify-center gap-3 shadow-lg"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -348,7 +430,7 @@ function AuthContent() {
           </div>
         </div>
 
-        <p className="text-center text-sm text-muted mt-8">
+        <p className="text-center text-sm text-zinc-400 dark:text-white mt-8">
           &copy; {new Date().getFullYear()} Fast Page. Todos los derechos
           reservados.
         </p>

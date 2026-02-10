@@ -1,6 +1,9 @@
 import "./globals.css"
 import Nav from "@/components/Nav"
 import Footer from "@/components/Footer"
+import { ThemeProvider } from "@/providers/ThemeProvider"
+import { LanguageProvider } from "@/context/LanguageContext"
+import FloatingControls from "@/components/FloatingControls"
 
 export const metadata = {
   title: "Fast Page",
@@ -13,11 +16,21 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body>
-        <Nav />
-        {children}
-        <Footer />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <LanguageProvider>
+            <Nav />
+            {children}
+            <FloatingControls />
+            <Footer />
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

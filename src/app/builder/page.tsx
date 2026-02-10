@@ -58,7 +58,7 @@ export default function BuilderPage() {
       justify-content: center;
       gap: 0.5rem;
       padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
+      border-radius: 9999px;
       font-weight: 600;
       border: 1px solid #1f2a37;
       background: linear-gradient(to bottom, #151c29, #101723);
@@ -99,7 +99,9 @@ export default function BuilderPage() {
       <Nav />
       <main className="section container">
         <div className="card">
-          <h2 className="text-2xl font-bold mb-4">Constructor de landing</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            Constructor de <span className="text-gold-glow">landing</span>
+          </h2>
 
           <div className="flex flex-wrap gap-2 mb-6 p-4 bg-bg-alt rounded-lg border border-border">
             <button

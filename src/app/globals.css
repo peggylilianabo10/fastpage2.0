@@ -3,32 +3,101 @@
 @tailwind utilities;
 
 :root {
+  /* Light Mode (Default in CSS, overridden by next-themes if dark) */
+  --background: #ffffff;
+  --foreground: #09090b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+
+  /* Gold Theme Colors - Light Mode (Darker for contrast) */
+  --gold-text: #b48e2d; /* Dark Goldenrod */
+  --gold-gradient-start: #b48e2d;
+  --gold-gradient-mid: #d4af37;
+  --gold-gradient-end: #8a6c1e;
+  --gold-shadow: rgba(180, 142, 45, 0.3);
+}
+
+.dark {
+  /* Cosmic Dark Theme */
   --background: #050505;
   --foreground: #ffffff;
   --primary: #ffffff;
   --primary-foreground: #000000;
-  --muted: #888888;
+  --muted: #ffffff;
+  --muted-foreground: #ffffff;
   --border: rgba(255, 255, 255, 0.1);
+
+  /* Gold Theme Colors - Dark Mode (Bright for glow) */
+  --gold-text: #ffd700;
+  --gold-gradient-start: #ffd700;
+  --gold-gradient-mid: #fdb931;
+  --gold-gradient-end: #c08200;
+  --gold-shadow: rgba(255, 215, 0, 0.6);
 }
 
 /* Deluxe & Gold Theme Utilities */
 .text-gold-glow {
-  color: #ffd700;
+  color: var(--gold-text);
   text-shadow:
-    0 0 10px rgba(255, 215, 0, 0.6),
-    0 0 20px rgba(255, 215, 0, 0.3);
+    0 0 10px var(--gold-shadow),
+    0 0 20px rgba(255, 215, 0, 0.1);
 }
 
 .text-gold-gradient {
-  background: linear-gradient(to bottom, #ffd700, #fdb931, #c08200);
+  background: linear-gradient(
+    to bottom,
+    var(--gold-gradient-start),
+    var(--gold-gradient-mid),
+    var(--gold-gradient-end)
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* FAQ Iridescent Gold Effect */
+@keyframes iridescent-gold {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.group:hover .text-gold-iridescent,
+details[open] summary .text-gold-iridescent {
+  background: linear-gradient(
+    90deg,
+    #ffd700,
+    #fdb931,
+    #ffffff,
+    #fdb931,
+    #ffd700
+  ) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  animation: iridescent-gold 3s linear infinite !important;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+/* General Button Styles */
+.btn {
+  border-radius: 9999px;
 }
 
 .btn-deluxe {
   position: relative;
+  border-radius: 9999px;
   background: linear-gradient(
     135deg,
     #bf953f,
@@ -60,17 +129,18 @@
 
 .btn-deluxe-outline {
   background: transparent;
-  color: #ffd700;
-  border: 1px solid #ffd700;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
-  text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+  border-radius: 9999px;
+  color: var(--gold-text);
+  border: 1px solid var(--gold-text);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.2);
   transition: all 0.3s ease;
 }
 
 .btn-deluxe-outline:hover {
   background: rgba(255, 215, 0, 0.1);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
 }
 
 @keyframes shimmer {
@@ -162,106 +232,80 @@
 }
 
 @keyframes thunder-flash {
-  0%, 95%, 100% { opacity: 0; }
-  96% { opacity: 0.15; }
-  97% { opacity: 0; }
-  98% { opacity: 0.1; }
-  99% { opacity: 0; }
-}
-
-.animate-thunder-flash {
-  animation: thunder-flash 12s infinite;
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
-  overflow-x: hidden;
-  min-height: 100vh;
-}
-
-/* Background Gradients to match the "Cosmic" vibe */
-body::before {
-  content: "";
-  position: fixed;
-  top: -20%;
-  left: -10%;
-  width: 60%;
-  height: 60%;
-  background: radial-gradient(
-    circle,
-    rgba(60, 240, 168, 0.03) 0%,
-    rgba(0, 0, 0, 0) 70%
-  );
-  z-index: -1;
-  pointer-events: none;
-}
-
-body::after {
-  content: "";
-  position: fixed;
-  bottom: -20%;
-  right: -10%;
-  width: 60%;
-  height: 60%;
-  background: radial-gradient(
-    circle,
-    rgba(124, 103, 255, 0.03) 0%,
-    rgba(0, 0, 0, 0) 70%
-  );
-  z-index: -1;
-  pointer-events: none;
-}
-
-/* Utility Classes */
-.glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glass-pill {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 9999px;
-}
-
-/* Custom vibrate utility using Tailwind config animation */
-.hover-vibrate:hover {
-  @apply animate-vibrate;
-}
-
-/* Buttons */
-.btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 active:scale-95;
-}
-
-.btn-primary {
-  @apply bg-primary text-primary-foreground hover:bg-white/90;
-}
-
-.btn-secondary {
-  @apply bg-transparent text-foreground border border-border hover:bg-white/10;
-}
-
-/* Animations */
-@keyframes scroll {
-  0% {
-    transform: translateX(0);
-  }
+  0%,
+  95%,
   100% {
-    transform: translateX(-50%);
+    opacity: 0;
+  }
+  96% {
+    opacity: 0.8;
+  }
+  96.5% {
+    opacity: 0.1;
+  }
+  97% {
+    opacity: 1;
+  }
+  97.5% {
+    opacity: 0.2;
+  }
+  98% {
+    opacity: 0.8;
+  }
+  99% {
+    opacity: 0;
   }
 }
 
-.animate-scroll {
-  animation: scroll 40s linear infinite;
+.animate-thunder {
+  animation: thunder-flash 10s infinite;
 }
 
-.animate-scroll:hover {
-  animation-play-state: paused;
+/* Glass Utility - Theme Specific */
+.glass {
+  @apply bg-white/10 dark:bg-black/40 backdrop-blur-lg border border-white/20 dark:border-white/10;
+}
+
+/* FORCE WHITE TEXT IN DARK MODE GLOBAL OVERRIDE */
+@layer base {
+  .dark body,
+  .dark p,
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6,
+  .dark span,
+  .dark div,
+  .dark li,
+  .dark a,
+  .dark
+    [class*="text-zinc-"]:not(.text-gold-glow):not(.text-gold-gradient):not(
+      .text-gold-iridescent
+    ):not([class*="dark:text-yellow-"]),
+  .dark
+    [class*="text-gray-"]:not(.text-gold-glow):not(.text-gold-gradient):not(
+      .text-gold-iridescent
+    ):not([class*="dark:text-yellow-"]),
+  .dark
+    [class*="text-slate-"]:not(.text-gold-glow):not(.text-gold-gradient):not(
+      .text-gold-iridescent
+    ):not([class*="dark:text-yellow-"]),
+  .dark
+    [class*="text-neutral-"]:not(.text-gold-glow):not(.text-gold-gradient):not(
+      .text-gold-iridescent
+    ):not([class*="dark:text-yellow-"]),
+  .dark
+    [class*="text-stone-"]:not(.text-gold-glow):not(.text-gold-gradient):not(
+      .text-gold-iridescent
+    ):not([class*="dark:text-yellow-"]),
+  .dark .text-muted-foreground {
+    color: #ffffff !important;
+  }
+
+  /* Force black text to stay black even in dark mode */
+  .dark .text-black {
+    color: #000000 !important;
+  }
 }
