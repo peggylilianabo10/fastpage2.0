@@ -12,8 +12,47 @@ export default function EditorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
-  const [showSaved, setShowSaved] = useState(false);
+  const [isVisualEditActive, setIsVisualEditActive] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Inyectar script de edición en el iframe
+  const injectEditorScript = () => {
+    const iframe = iframeRef.current;
+    if (!iframe || !iframe.contentDocument) return;
+
+    const doc = iframe.contentDocument;
+    
+    // 1. Deshabilitar todos los enlaces para evitar navegación
+    const links = doc.querySelectorAll("a");
+    links.forEach(link => {
+      link.addEventListener("click", (e) => e.preventDefault());
+      link.style.cursor = "default";
+    });
+
+    // 2. Hacer el body editable o elementos específicos
+    if (isVisualEditActive) {
+      doc.body.contentEditable = "true";
+      doc.body.style.outline = "none";
+      
+      // Añadir estilos para resaltar elementos al pasar el mouse
+      const style = doc.createElement("style");
+      style.id = "editor-styles";
+      style.innerHTML = `
+        [contenteditable="true"]:hover {
+          outline: 2px dashed #06b6d4 !important;
+          outline-offset: 2px;
+        }
+        * {
+          user-select: auto !important;
+        }
+      `;
+      doc.head.appendChild(style);
+    } else {
+      doc.body.contentEditable = "false";
+      const style = doc.getElementById("editor-styles");
+      if (style) style.remove();
+    }
+  };
 
   useEffect(() => {
     const fetchSite = async () => {
@@ -31,17 +70,36 @@ export default function EditorPage() {
     fetchSite();
   }, [id]);
 
+  // Reinyectar cuando el iframe cargue o cambie el modo
+  useEffect(() => {
+    if (!loading && html) {
+      const timer = setTimeout(injectEditorScript, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, html, isVisualEditActive]);
+
   const handleSave = async () => {
+    const iframe = iframeRef.current;
+    if (!iframe || !iframe.contentDocument) return;
+
     setSaving(true);
     try {
-      // In a real editor, we would extract the modified HTML from the iframe
-      // For this demo, we'll simulate saving the current HTML
+      // 1. Limpiar el HTML antes de guardar (quitar contentEditable y estilos de edición)
+      const doc = iframe.contentDocument.cloneNode(true) as Document;
+      doc.body.contentEditable = "false";
+      const style = doc.getElementById("editor-styles");
+      if (style) style.remove();
+      
+      const updatedHtml = "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
+
       const res = await fetch(`/api/sites/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ html }),
+        body: JSON.stringify({ html: updatedHtml }),
       });
+
       if (res.ok) {
+        setHtml(updatedHtml);
         setShowSaved(true);
         setTimeout(() => setShowSaved(false), 3000);
       }
@@ -78,6 +136,25 @@ export default function EditorPage() {
             </h1>
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Tenant Instance</p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2 bg-zinc-800/50 p-1 rounded-xl border border-white/5">
+          <button 
+            onClick={() => setIsVisualEditActive(true)}
+            className={`p-2 rounded-lg transition-all flex items-center gap-2 ${isVisualEditActive ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
+            title="Edición Visual"
+          >
+            <Eye className="w-4 h-4" />
+            <span className="text-[10px] font-bold uppercase">Visual</span>
+          </button>
+          <button 
+            onClick={() => setIsVisualEditActive(false)}
+            className={`p-2 rounded-lg transition-all flex items-center gap-2 ${!isVisualEditActive ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
+            title="Vista Previa"
+          >
+            <Code className="w-4 h-4" />
+            <span className="text-[10px] font-bold uppercase">Preview</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-2 bg-zinc-800/50 p-1 rounded-xl border border-white/5">
