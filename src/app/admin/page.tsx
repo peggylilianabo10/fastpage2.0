@@ -6,12 +6,12 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { 
   collection, 
-  getDocs, 
   doc, 
   updateDoc, 
   deleteDoc, 
   query, 
-  orderBy 
+  orderBy,
+  onSnapshot
 } from "firebase/firestore";
 import { 
   Users, 
@@ -43,33 +43,37 @@ export default function AdminPanel() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    let unsubscribeSnapshot: () => void;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (!user || user.email !== "admin@fastpage.com") {
         router.push("/hub");
       } else {
         setAuthorized(true);
-        fetchUsers();
+        
+        // Configurar escucha en tiempo real de Firestore
+        const q = query(collection(db, "users"), orderBy("lastLogin", "desc"));
+        unsubscribeSnapshot = onSnapshot(q, (querySnapshot) => {
+          const usersData: UserData[] = [];
+          querySnapshot.forEach((doc) => {
+            usersData.push({ uid: doc.id, ...doc.data() } as UserData);
+          });
+          setUsers(usersData);
+          setLoading(false);
+        }, (error) => {
+          console.error("Error fetching users:", error);
+          setLoading(false);
+        });
       }
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+    };
   }, [router]);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const q = query(collection(db, "users"), orderBy("lastLogin", "desc"));
-      const querySnapshot = await getDocs(q);
-      const usersData: UserData[] = [];
-      querySnapshot.forEach((doc) => {
-        usersData.push({ uid: doc.id, ...doc.data() } as UserData);
-      });
-      setUsers(usersData);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Ya no necesitamos fetchUsers manual ya que onSnapshot se encarga
 
   const updateUserStatus = async (uid: string, status: UserData['status']) => {
     try {

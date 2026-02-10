@@ -83,8 +83,10 @@ function AuthContent() {
         name,
         email,
         createdAt: Date.now(),
+        lastLogin: Date.now(),
         uid: user.uid,
-        role: "user", // Default role
+        role: "user",
+        status: "active"
       });
 
       // 4. Guardar sesión local (para compatibilidad)
@@ -129,6 +131,11 @@ function AuthContent() {
         password,
       );
       const user = userCredential.user;
+
+      // Actualizar lastLogin en Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        lastLogin: Date.now()
+      }, { merge: true });
 
       localStorage.setItem(
         "fp_session",
