@@ -109,11 +109,11 @@ export default function HubPage() {
     {
       title: t("hub.config.title"),
       description: t("hub.config.desc"),
-      icon: <Settings className="w-8 h-8 text-zinc-400" />,
+      icon: <Settings className="w-8 h-8 text-amber-400" />,
       action: t("hub.config.action"),
       href: "/settings",
       gradient: "from-zinc-900 to-zinc-900",
-      border: "hover:border-zinc-500/50",
+      border: "hover:border-amber-500/50",
     },
   ];
 

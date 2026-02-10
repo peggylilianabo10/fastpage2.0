@@ -180,76 +180,78 @@ export default function EditorPage() {
   return (
     <div className="h-screen flex flex-col bg-zinc-950 text-white overflow-hidden">
       {/* Top Bar */}
-      <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-zinc-900/50 backdrop-blur-md z-20">
-        <div className="flex items-center gap-4">
-          <Link href="/cloner/web" className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+      <header className="h-20 md:h-16 border-b border-white/10 flex items-center justify-between px-4 md:px-6 bg-zinc-900/50 backdrop-blur-md z-20">
+        <div className="flex items-center gap-2 md:gap-4 overflow-x-auto no-scrollbar py-2">
+          <Link href="/cloner/web" className="p-2 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0">
             <ArrowLeft className="w-5 h-5 text-zinc-400" />
           </Link>
-          <div className="h-6 w-px bg-white/10 mx-2" />
-          <div>
-            <h1 className="text-sm font-bold text-white flex items-center gap-2">
-              Editor de Sitio <span className="text-cyan-400 text-xs px-2 py-0.5 rounded bg-cyan-400/10 border border-cyan-400/20">#{id}</span>
+          <div className="h-6 w-px bg-white/10 mx-1 md:mx-2 flex-shrink-0 hidden sm:block" />
+          <div className="hidden lg:block flex-shrink-0">
+            <h1 className="text-[10px] md:text-sm font-bold text-white flex items-center gap-2">
+              Editor <span className="text-cyan-400 text-[10px] px-2 py-0.5 rounded bg-cyan-400/10 border border-cyan-400/20">#{id}</span>
             </h1>
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Tenant Instance</p>
+          </div>
+
+          <div className="flex items-center gap-1 md:gap-2 bg-zinc-800/50 p-1 rounded-xl border border-white/5 ml-2 flex-shrink-0">
+            <button 
+              onClick={() => setIsVisualEditActive(true)}
+              className={`p-1.5 md:p-2 rounded-lg transition-all flex items-center gap-1.5 md:gap-2 ${isVisualEditActive ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
+              title="Edición Visual"
+            >
+              <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <span className="text-[9px] md:text-[10px] font-bold uppercase">Visual</span>
+            </button>
+            <button 
+              onClick={() => setIsVisualEditActive(false)}
+              className={`p-1.5 md:p-2 rounded-lg transition-all flex items-center gap-1.5 md:gap-2 ${!isVisualEditActive ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
+              title="Vista Previa"
+            >
+              <Code className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <span className="text-[9px] md:text-[10px] font-bold uppercase">Preview</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 md:gap-2 bg-zinc-800/50 p-1 rounded-xl border border-white/5 flex-shrink-0">
+            <button 
+              onClick={() => setViewMode("desktop")}
+              className={`p-1.5 md:p-2 rounded-lg transition-all ${viewMode === "desktop" ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
+            >
+              <Monitor className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            </button>
+            <button 
+              onClick={() => setViewMode("mobile")}
+              className={`p-1.5 md:p-2 rounded-lg transition-all ${viewMode === "mobile" ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
+            >
+              <Smartphone className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-zinc-800/50 p-1 rounded-xl border border-white/5">
-          <button 
-            onClick={() => setIsVisualEditActive(true)}
-            className={`p-2 rounded-lg transition-all flex items-center gap-2 ${isVisualEditActive ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
-            title="Edición Visual"
-          >
-            <Eye className="w-4 h-4" />
-            <span className="text-[10px] font-bold uppercase">Visual</span>
-          </button>
-          <button 
-            onClick={() => setIsVisualEditActive(false)}
-            className={`p-2 rounded-lg transition-all flex items-center gap-2 ${!isVisualEditActive ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
-            title="Vista Previa"
-          >
-            <Code className="w-4 h-4" />
-            <span className="text-[10px] font-bold uppercase">Preview</span>
-          </button>
-        </div>
+        {/* Espacio central para el Nav global en PC */}
+        <div className="hidden xl:block w-96" />
 
-        <div className="flex items-center gap-2 bg-zinc-800/50 p-1 rounded-xl border border-white/5">
-          <button 
-            onClick={() => setViewMode("desktop")}
-            className={`p-2 rounded-lg transition-all ${viewMode === "desktop" ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
-          >
-            <Monitor className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={() => setViewMode("mobile")}
-            className={`p-2 rounded-lg transition-all ${viewMode === "mobile" ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
-          >
-            <Smartphone className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 ml-2">
           {(showSaved || showPublished) && (
-            <div className={`flex items-center gap-2 text-xs font-bold animate-fade-in ${showPublished ? "text-cyan-400" : "text-emerald-400"}`}>
-              <CheckCircle className="w-4 h-4" />
-              {showPublished ? "¡Proyecto Publicado!" : "¡Guardado!"}
+            <div className={`hidden sm:flex items-center gap-2 text-[10px] md:text-xs font-bold animate-fade-in ${showPublished ? "text-cyan-400" : "text-emerald-400"}`}>
+              <CheckCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <span className="hidden md:inline">{showPublished ? "¡Publicado!" : "¡Guardado!"}</span>
             </div>
           )}
           <button 
             onClick={handleSave}
             disabled={saving || publishing}
-            className="flex items-center gap-2 bg-zinc-800 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-zinc-700 transition-all active:scale-95 disabled:opacity-50 border border-white/10"
+            className="flex items-center gap-1.5 md:gap-2 bg-zinc-800 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl font-bold text-[10px] md:text-sm hover:bg-zinc-700 transition-all active:scale-95 disabled:opacity-50 border border-white/10"
           >
-            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-            Guardar
+            {saving ? <div className="w-3.5 h-3.5 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5 md:w-4 md:h-4" />}
+            <span className="hidden xs:inline">Guardar</span>
           </button>
           <button 
             onClick={handlePublish}
             disabled={saving || publishing}
-            className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:from-cyan-400 hover:to-blue-500 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-cyan-500/20"
+            className="flex items-center gap-1.5 md:gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl font-bold text-[10px] md:text-sm hover:from-cyan-400 hover:to-blue-500 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-cyan-500/20"
           >
-            {publishing ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Rocket className="w-4 h-4" />}
-            Publicar Proyecto
+            {publishing ? <div className="w-3.5 h-3.5 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Rocket className="w-3.5 h-3.5 md:w-4 md:h-4" />}
+            <span>Publicar</span>
           </button>
         </div>
       </header>

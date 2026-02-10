@@ -370,3 +370,13 @@ details[open] summary .text-gold-iridescent {
 .nav-link-glow:hover {
   animation: iridescent-nav 3s infinite linear;
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
