@@ -24,6 +24,7 @@ type SiteData = {
   published: boolean;
   publishedAt?: number;
   status?: "draft" | "published" | "archived";
+  bundle?: any;
 };
 
 class SitesStorage {

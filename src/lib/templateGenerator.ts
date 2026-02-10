@@ -11,24 +11,24 @@ export class TemplateGenerator {
 
     if (category === "restaurant") {
       if (specialty === "pizzeria") {
-        return this.generatePizzeriaTemplate(businessName);
+        return TemplateGenerator.generatePizzeriaTemplate(businessName);
       }
       if (specialty === "comida-criolla") {
-        return this.generateCriollaTemplate(businessName);
+        return TemplateGenerator.generateCriollaTemplate(businessName);
       }
       if (specialty === "comida-rapida") {
-        return this.generateFastFoodTemplate(businessName);
+        return TemplateGenerator.generateFastFoodTemplate(businessName);
       }
       if (specialty === "comida-saludable") {
-        return this.generateHealthyFoodTemplate(businessName);
+        return TemplateGenerator.generateHealthyFoodTemplate(businessName);
       }
     }
 
     // Default template for other specialties
-    return this.generateGenericTemplate(businessName, specialty);
+    return TemplateGenerator.generateGenericTemplate(businessName, specialty);
   }
 
-  private static generatePizzeriaTemplate(name: string): string {
+  public static generatePizzeriaTemplate(name: string): string {
     return `
 <!DOCTYPE html>
 <html lang="es">
@@ -172,7 +172,7 @@ export class TemplateGenerator {
     `;
   }
 
-  private static generateCriollaTemplate(name: string): string {
+  public static generateCriollaTemplate(name: string): string {
     return `
 <!DOCTYPE html>
 <html lang="es">
@@ -315,7 +315,7 @@ export class TemplateGenerator {
     `;
   }
 
-  private static generateFastFoodTemplate(name: string): string {
+  public static generateFastFoodTemplate(name: string): string {
     return `
 <!DOCTYPE html>
 <html lang="es">
@@ -583,7 +583,7 @@ export class TemplateGenerator {
     `;
   }
 
-  private static generateHealthyFoodTemplate(name: string): string {
+  public static generateHealthyFoodTemplate(name: string): string {
     return `
 <!DOCTYPE html>
 <html lang="es">
@@ -714,7 +714,7 @@ export class TemplateGenerator {
     `;
   }
 
-  private static generateGenericTemplate(name: string, specialty: string): string {
+  public static generateGenericTemplate(name: string, specialty: string): string {
     return `
 <!DOCTYPE html>
 <html lang="es">

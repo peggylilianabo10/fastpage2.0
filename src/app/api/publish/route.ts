@@ -51,12 +51,12 @@ export async function POST(req: NextRequest) {
 
     // B. Security & Performance Enhancements
     // Add rel="noopener noreferrer" to external links
-    optimizedHtml = optimizedHtml.replace(/<a\s+(?:[^>]*?\s+)?href="https?:\/\/(?!yourdomain\.com)[^"]+"(?![^>]*?rel=)/gi, (match) => {
+    optimizedHtml = optimizedHtml.replace(/<a\s+(?:[^>]*?\s+)?href="https?:\/\/(?!yourdomain\.com)[^"]+"(?![^>]*?rel=)/gi, (match: string) => {
       return match + ' rel="noopener noreferrer" target="_blank"';
     });
 
     // Add lazy loading and async decoding to images if missing
-    optimizedHtml = optimizedHtml.replace(/<img(?![^>]*?loading=)(?![^>]*?decoding=)/gi, (match) => {
+    optimizedHtml = optimizedHtml.replace(/<img(?![^>]*?loading=)(?![^>]*?decoding=)/gi, (match: string) => {
       return match + ' loading="lazy" decoding="async"';
     });
 
