@@ -57,6 +57,7 @@ function AuthContent() {
     if (!user || !user.uid) return;
     
     try {
+      console.log("Intentando sincronizar en Firestore:", user.email);
       const userRef = doc(db, "users", user.uid);
       const is_admin = user.email === "admin@fastpage.com";
       
@@ -70,14 +71,21 @@ function AuthContent() {
         role: is_admin ? "admin" : "user",
       };
 
-      // Intento de guardado ultra-rápido
+      // Guardado forzado (sin merge para asegurar que se cree si no existe)
       await setDoc(userRef, userData, { merge: true });
+      console.log("Sincronización exitosa para:", user.email);
       
       // Actualizar sesión local
       localStorage.setItem("fp_session", JSON.stringify(userData));
       return true;
     } catch (error: any) {
-      console.error("Error sincronizando:", error);
+      console.error("Error detallado de sincronización:", error);
+      // Intentar guardar localmente aunque falle Firestore
+      localStorage.setItem("fp_session", JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+        name: user.displayName || "Usuario"
+      }));
       return false;
     }
   };

@@ -123,18 +123,25 @@ export default function AdminPanel() {
       setDebugInfo("Conectando con Firestore...");
       
       const unsubscribeSnapshot = onSnapshot(usersRef, (querySnapshot) => {
-        console.log("Admin: Snapshot recibido. Documentos:", querySnapshot.size);
-        setDebugInfo(`Conectado. Usuarios encontrados: ${querySnapshot.size}`);
+        console.log("Admin: Snapshot recibido con", querySnapshot.size, "documentos");
         
-        const usersData: UserData[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          usersData.push({ uid: doc.id, ...data } as UserData);
-        });
-        
-        // Ordenar por último acceso
-        usersData.sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
-        setUsers(usersData);
+        if (querySnapshot.empty) {
+          console.log("Admin: La colección está vacía");
+          setDebugInfo("Base de datos conectada, pero vacía (0 usuarios).");
+          setUsers([]);
+        } else {
+          const usersData: UserData[] = [];
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            console.log("Admin: Usuario encontrado ->", data.email);
+            usersData.push({ uid: doc.id, ...data } as UserData);
+          });
+          
+          // Ordenar por último acceso
+          usersData.sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
+          setUsers(usersData);
+          setDebugInfo(`Conectado. Usuarios en tabla: ${querySnapshot.size}`);
+        }
         setLoading(false);
         setError(null);
       }, (err) => {
