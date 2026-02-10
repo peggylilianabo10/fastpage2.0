@@ -51,6 +51,8 @@ export default function Nav() {
     { name: t("nav.hub"), href: "/hub", emoji: "" },
   ];
 
+  if (pathname.startsWith("/editor")) return null;
+
   return (
     <>
       {/* Desktop Navigation Layout */}

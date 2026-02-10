@@ -4,11 +4,30 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { Save, Eye, Code, Smartphone, Monitor, ArrowLeft, CheckCircle, Globe, Rocket } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function EditorPage() {
   const params = useParams();
   const id = params.id as string;
+  const pathname = usePathname();
+  const { t } = useLanguage();
   const [html, setHtml] = useState<string | null>(null);
+
+  const navLinks = [
+    { name: t("nav.home"), href: "/" },
+    { name: t("nav.builder"), href: "/builder" },
+    { name: t("nav.templates"), href: "/cloner" },
+    { name: t("nav.cloner"), href: "/cloner/web" },
+    { name: t("nav.hub"), href: "/hub" },
+  ];
+
+  const [session, setSession] = useState<{ email?: string } | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("fastPageUser") || localStorage.getItem("fp_session");
+    if (saved) setSession(JSON.parse(saved));
+  }, []);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -181,18 +200,14 @@ export default function EditorPage() {
     <div className="h-screen flex flex-col bg-zinc-950 text-white overflow-hidden">
       {/* Top Bar */}
       <header className="h-20 md:h-16 border-b border-white/10 flex items-center justify-between px-4 md:px-6 bg-zinc-900/50 backdrop-blur-md z-20">
+        {/* Lado Izquierdo: Controles del Editor */}
         <div className="flex items-center gap-2 md:gap-4 overflow-x-auto no-scrollbar py-2">
           <Link href="/cloner/web" className="p-2 hover:bg-white/5 rounded-lg transition-colors flex-shrink-0">
             <ArrowLeft className="w-5 h-5 text-zinc-400" />
           </Link>
           <div className="h-6 w-px bg-white/10 mx-1 md:mx-2 flex-shrink-0 hidden sm:block" />
-          <div className="hidden lg:block flex-shrink-0">
-            <h1 className="text-[10px] md:text-sm font-bold text-white flex items-center gap-2">
-              Editor <span className="text-cyan-400 text-[10px] px-2 py-0.5 rounded bg-cyan-400/10 border border-cyan-400/20">#{id}</span>
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-1 md:gap-2 bg-zinc-800/50 p-1 rounded-xl border border-white/5 ml-2 flex-shrink-0">
+          
+          <div className="flex items-center gap-1 md:gap-2 bg-zinc-800/50 p-1 rounded-xl border border-white/5 flex-shrink-0">
             <button 
               onClick={() => setIsVisualEditActive(true)}
               className={`p-1.5 md:p-2 rounded-lg transition-all flex items-center gap-1.5 md:gap-2 ${isVisualEditActive ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/20" : "text-zinc-500 hover:text-white"}`}
@@ -227,16 +242,44 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* Espacio central para el Nav global en PC */}
-        <div className="hidden xl:block w-96" />
+        {/* Centro: Navegación Global (Solo en PC) */}
+        <nav className="hidden xl:flex items-center gap-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-[10px] uppercase tracking-[0.15em] font-bold text-zinc-400 hover:text-amber-400 transition-colors"
+            >
+              {link.name}
+            </Link>
+          ))}
+        </nav>
 
+        {/* Lado Derecho: Usuario y Acciones */}
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 ml-2">
+          {session && (
+            <div className="hidden 2xl:flex items-center gap-3 mr-4 border-r border-white/10 pr-4">
+              <span className="text-[10px] text-zinc-500 truncate max-w-[150px]">{session.email}</span>
+              <button 
+                onClick={() => {
+                  localStorage.removeItem("fastPageUser");
+                  localStorage.removeItem("fp_session");
+                  window.location.href = "/auth";
+                }}
+                className="text-[10px] font-bold uppercase text-zinc-500 hover:text-red-400 transition-colors"
+              >
+                {t("nav.logout")}
+              </button>
+            </div>
+          )}
+
           {(showSaved || showPublished) && (
             <div className={`hidden sm:flex items-center gap-2 text-[10px] md:text-xs font-bold animate-fade-in ${showPublished ? "text-cyan-400" : "text-emerald-400"}`}>
               <CheckCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
               <span className="hidden md:inline">{showPublished ? "¡Publicado!" : "¡Guardado!"}</span>
             </div>
           )}
+          
           <button 
             onClick={handleSave}
             disabled={saving || publishing}
@@ -245,6 +288,7 @@ export default function EditorPage() {
             {saving ? <div className="w-3.5 h-3.5 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5 md:w-4 md:h-4" />}
             <span className="hidden xs:inline">Guardar</span>
           </button>
+          
           <button 
             onClick={handlePublish}
             disabled={saving || publishing}
