@@ -158,7 +158,7 @@ function AuthContent() {
         error.code === "auth/wrong-password" ||
         error.code === "auth/invalid-credential"
       ) {
-        showToast("Credenciales inválidas");
+        showToast("Credenciales inválidas. Si usaste Google, usa el botón de abajo.");
       } else {
         showToast("Error al iniciar sesión: " + error.message);
       }
