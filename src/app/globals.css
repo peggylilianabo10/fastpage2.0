@@ -348,12 +348,11 @@ details[open] summary .text-gold-iridescent {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent !important;
-  animation: iridescent-gold 2s linear infinite;
+  animation: iridescent-gold 3s linear infinite;
   text-shadow: 
-    0 0 15px rgba(255, 215, 0, 0.6),
-    0 0 30px rgba(255, 165, 0, 0.3);
-  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
-  transform: translateY(-2px) scale(1.05);
+    0 0 10px rgba(255, 215, 0, 0.4),
+    0 0 20px rgba(255, 165, 0, 0.2);
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
 }
 
 .nav-link-glow::after {
@@ -375,13 +374,9 @@ details[open] summary .text-gold-iridescent {
 }
 
 @keyframes iridescent-nav {
-  0% { filter: hue-rotate(0deg) brightness(1) drop-shadow(0 0 8px rgba(255, 215, 0, 0.6)); }
-  50% { filter: hue-rotate(30deg) brightness(1.5) drop-shadow(0 0 18px rgba(255, 215, 0, 0.9)); }
-  100% { filter: hue-rotate(0deg) brightness(1) drop-shadow(0 0 8px rgba(255, 215, 0, 0.6)); }
-}
-
-.nav-link-glow:hover {
-  animation: iridescent-nav 2s infinite linear;
+  0% { filter: brightness(1) drop-shadow(0 0 5px rgba(255, 215, 0, 0.4)); }
+  50% { filter: brightness(1.2) drop-shadow(0 0 12px rgba(255, 215, 0, 0.6)); }
+  100% { filter: brightness(1) drop-shadow(0 0 5px rgba(255, 215, 0, 0.4)); }
 }
 
 @layer utilities {
