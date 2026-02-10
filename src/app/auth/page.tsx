@@ -56,37 +56,40 @@ function AuthContent() {
   const syncUserToFirestore = async (user: any) => {
     if (!user) return;
     try {
+      console.log("Sincronizando usuario con Firestore:", user.email);
       const userRef = doc(db, "users", user.uid);
+      
       const userData: any = {
         uid: user.uid,
         email: user.email,
-        name: user.displayName || "Usuario",
+        name: user.displayName || user.name || "Usuario",
         photoURL: user.photoURL || "",
         lastLogin: Date.now(),
-        // Solo establecer estos si el usuario es nuevo o para asegurar valores
         status: "active",
         role: user.email === "admin@fastpage.com" ? "admin" : "user",
       };
 
-      // Si es la primera vez que se registra, podemos marcar el createdAt
-      // Pero como estamos usando merge: true, mejor lo manejamos con serverTimestamp o similar si quisiéramos precisión absoluta.
-      // Por ahora, si no existe el campo en Firestore, lo pondrá el primer login.
-      
+      // Intentar guardar con un log de éxito
       await setDoc(userRef, userData, { merge: true });
+      console.log("Sincronización exitosa en Firestore para:", user.email);
       
       // Actualizar sesión local
       localStorage.setItem(
         "fp_session",
         JSON.stringify({
           email: user.email,
-          name: user.displayName || "Usuario",
+          name: userData.name,
           uid: user.uid,
-          photoURL: user.photoURL || "",
+          photoURL: userData.photoURL,
         })
       );
       return true;
-    } catch (error) {
-      console.error("Error en syncUserToFirestore:", error);
+    } catch (error: any) {
+      console.error("Error crítico en syncUserToFirestore:", error);
+      // Si el error es de permisos, avisar al usuario
+      if (error.code === 'permission-denied') {
+        console.error("Permiso denegado en Firestore. Revisa las reglas de seguridad.");
+      }
       return false;
     }
   };

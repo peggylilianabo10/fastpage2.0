@@ -77,20 +77,29 @@ export default function AdminPanel() {
       setDebugInfo("Cargando...");
       
       const unsubscribeSnapshot = onSnapshot(usersRef, (querySnapshot) => {
-        console.log("Snapshot recibido, documentos:", querySnapshot.size);
-        setDebugInfo(`Usuarios: ${querySnapshot.size}`);
-        const usersData: UserData[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          console.log("Usuario encontrado:", doc.id, data.email);
-          usersData.push({ uid: doc.id, ...data } as UserData);
-        });
-        usersData.sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
-        setUsers(usersData);
+        console.log("Snapshot recibido de Firestore. Tamaño:", querySnapshot.size);
+        setDebugInfo(`Documentos en Firestore: ${querySnapshot.size}`);
+        
+        if (querySnapshot.empty) {
+          console.warn("La colección 'users' está vacía en Firestore.");
+          setUsers([]);
+        } else {
+          const usersData: UserData[] = [];
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            console.log("Cargando usuario de Firestore:", data.email);
+            usersData.push({ uid: doc.id, ...data } as UserData);
+          });
+          
+          // Ordenar manualmente para evitar requerir índices compuestos de Firestore
+          usersData.sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
+          setUsers(usersData);
+        }
         setLoading(false);
+        setError(null);
       }, (err) => {
-        console.error("Error en onSnapshot admin:", err);
-        setError(err.message);
+        console.error("Error crítico leyendo Firestore:", err);
+        setError(`Error de base de datos: ${err.message}`);
         setLoading(false);
       });
 
