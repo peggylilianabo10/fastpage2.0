@@ -166,9 +166,17 @@ export async function GET(request: NextRequest) {
     }
 
     const html = await res.text();
+    
+    // 6. Optimization: Remove non-essential large content to stay within Firestore limits
+    let optimizedHtml = html;
+    if (Buffer.byteLength(optimizedHtml, 'utf8') > 800000) { // If over 800KB
+      // Remove large SVG definitions if possible or excessive comments
+      optimizedHtml = optimizedHtml.replace(/<!--[\s\S]*?-->/g, ''); // Remove comments
+    }
+
     // Use the final URL after redirects for base tag
     const finalUrl = res.url || target;
-    const sanitizedHtml = sanitizeHtml(html, finalUrl);
+    const sanitizedHtml = sanitizeHtml(optimizedHtml, finalUrl);
 
     return new Response(sanitizedHtml, {
       status: 200,

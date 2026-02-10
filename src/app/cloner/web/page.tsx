@@ -58,9 +58,13 @@ export default function WebClonerPage() {
         body: JSON.stringify({ html, url }),
       });
       
-      if (!res.ok) throw new Error("Failed to initialize editor session");
+      const data = await res.json();
       
-      const { siteId } = await res.json();
+      if (!res.ok) {
+        throw new Error(data.details || data.error || "Failed to initialize editor session");
+      }
+      
+      const { siteId } = data;
       window.open(`/editor/${siteId}`, "_blank");
     } catch (e: any) {
       setError(e.message || "Error al abrir el editor");
