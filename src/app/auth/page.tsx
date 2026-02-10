@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Zap } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import {
   createUserWithEmailAndPassword,
@@ -185,10 +186,8 @@ function AuthContent() {
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-black font-bold text-2xl group-hover:scale-110 transition-transform duration-300 shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-              C
-            </div>
-            <span className="text-3xl font-bold text-white tracking-tight group-hover:text-gold-glow transition-colors">
+            <Zap className="w-12 h-12 text-amber-400 drop-shadow-[0_0_15px_rgba(255,215,0,0.6)] group-hover:scale-110 transition-transform duration-300" />
+            <span className="text-3xl font-bold text-tornasolado tracking-tight transition-all">
               Fast Page
             </span>
           </Link>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Save, Eye, Code, Smartphone, Monitor, ArrowLeft, CheckCircle } from "lucide-react";
+import { Save, Eye, Code, Smartphone, Monitor, ArrowLeft, CheckCircle, Globe, Rocket } from "lucide-react";
 import Link from "next/link";
 
 export default function EditorPage() {
@@ -11,9 +11,11 @@ export default function EditorPage() {
   const [html, setHtml] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [isVisualEditActive, setIsVisualEditActive] = useState(true);
   const [showSaved, setShowSaved] = useState(false);
+  const [showPublished, setShowPublished] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Inyectar script de edición en el iframe
@@ -143,6 +145,27 @@ export default function EditorPage() {
     }
   };
 
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      // First save current changes
+      await handleSave();
+      
+      const res = await fetch(`/api/sites/${id}`, {
+        method: "PATCH",
+      });
+
+      if (res.ok) {
+        setShowPublished(true);
+        setTimeout(() => setShowPublished(false), 3000);
+      }
+    } catch (error) {
+      console.error("Error publishing site:", error);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
@@ -206,19 +229,27 @@ export default function EditorPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {showSaved && (
-            <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold animate-fade-in">
+          {(showSaved || showPublished) && (
+            <div className={`flex items-center gap-2 text-xs font-bold animate-fade-in ${showPublished ? "text-cyan-400" : "text-emerald-400"}`}>
               <CheckCircle className="w-4 h-4" />
-              ¡Guardado!
+              {showPublished ? "¡Proyecto Publicado!" : "¡Guardado!"}
             </div>
           )}
           <button 
             onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded-xl font-bold text-sm hover:bg-zinc-200 transition-all active:scale-95 disabled:opacity-50"
+            disabled={saving || publishing}
+            className="flex items-center gap-2 bg-zinc-800 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-zinc-700 transition-all active:scale-95 disabled:opacity-50 border border-white/10"
           >
-            {saving ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-            Guardar Cambios
+            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+            Guardar
+          </button>
+          <button 
+            onClick={handlePublish}
+            disabled={saving || publishing}
+            className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:from-cyan-400 hover:to-blue-500 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-cyan-500/20"
+          >
+            {publishing ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Rocket className="w-4 h-4" />}
+            Publicar Proyecto
           </button>
         </div>
       </header>

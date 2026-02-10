@@ -1,7 +1,10 @@
 type SiteData = {
+  id: string;
   html: string;
   url: string;
   createdAt: number;
+  published: boolean;
+  publishedAt?: number;
 };
 
 class SitesStorage {
@@ -25,9 +28,9 @@ class SitesStorage {
     return SitesStorage.instance;
   }
 
-  public set(id: string, data: SiteData): void {
+  public set(id: string, data: Omit<SiteData, "id">): void {
     console.log(`[SitesStorage] Saving site: ${id}`);
-    this.store.set(id, data);
+    this.store.set(id, { ...data, id });
   }
 
   public get(id: string): SiteData | undefined {
@@ -36,11 +39,29 @@ class SitesStorage {
     return data;
   }
 
+  public getAll(): SiteData[] {
+    return Array.from(this.store.values());
+  }
+
   public update(id: string, html: string): boolean {
     const existing = this.store.get(id);
     if (existing) {
       console.log(`[SitesStorage] Updating site: ${id}`);
       this.store.set(id, { ...existing, html });
+      return true;
+    }
+    return false;
+  }
+
+  public publish(id: string): boolean {
+    const existing = this.store.get(id);
+    if (existing) {
+      console.log(`[SitesStorage] Publishing site: ${id}`);
+      this.store.set(id, { 
+        ...existing, 
+        published: true, 
+        publishedAt: Date.now() 
+      });
       return true;
     }
     return false;

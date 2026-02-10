@@ -57,21 +57,21 @@ export default function Nav() {
       <div className="hidden md:block">
         {/* Logo - Top Left */}
         <div className="fixed top-8 left-8 z-50">
-          <Link href="/" className="flex items-center gap-2 hover-vibrate" aria-label="Fast Page Home">
-            <Zap className="w-8 h-8 text-amber-400 drop-shadow-[0_0_8px_rgba(255,215,0,0.7)]" />
+          <Link href="/" className="flex items-center gap-2 group transition-all" aria-label="Fast Page Home">
+            <Zap className="w-8 h-8 text-amber-400 drop-shadow-[0_0_8px_rgba(255,215,0,0.7)] group-hover:scale-110 transition-transform duration-300" />
           </Link>
         </div>
 
-        {/* Center Pill Nav */}
-        <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 glass-pill px-2 py-2 flex items-center gap-1 border border-black/5 dark:border-white/10 bg-white/50 dark:bg-black/50 backdrop-blur-md">
+        {/* Center Minimalist Nav */}
+        <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-8 bg-transparent">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`nav-link-glow text-[11px] uppercase tracking-[0.2em] font-bold transition-all ${
                 pathname === link.href
-                  ? "bg-zinc-900 dark:bg-white/10 text-white"
-                  : "text-muted-foreground dark:text-white hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
+                  ? "text-amber-400 drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]"
+                  : "text-zinc-400 hover:text-white"
               }`}
             >
               {link.name}

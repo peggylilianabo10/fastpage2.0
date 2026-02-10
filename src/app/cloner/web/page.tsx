@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/context/LanguageContext";
-import { Globe, ArrowRight, AlertCircle } from "lucide-react";
+import { Globe, ArrowRight, AlertCircle, ExternalLink, Clock, Trash2, Edit3, Rocket } from "lucide-react";
 
 function isValidUrl(url: string) {
   try {
@@ -22,8 +22,29 @@ export default function WebClonerPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [savingToEditor, setSavingToEditor] = useState(false);
+  const [publishedSites, setPublishedSites] = useState<any[]>([]);
+  const [fetchingSites, setFetchingSites] = useState(true);
 
   const debouncedUrl = useMemo(() => url, [url]);
+
+  const fetchPublishedSites = async () => {
+    setFetchingSites(true);
+    try {
+      const res = await fetch("/api/sites");
+      if (res.ok) {
+        const data = await res.json();
+        setPublishedSites(data);
+      }
+    } catch (error) {
+      console.error("Error fetching sites:", error);
+    } finally {
+      setFetchingSites(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPublishedSites();
+  }, []);
 
   const handleOpenEditor = async () => {
     if (!html || !isValidUrl(url)) return;
@@ -126,6 +147,83 @@ export default function WebClonerPage() {
               <div className="mt-3 flex items-center gap-2 text-red-400">
                 <AlertCircle className="w-4 h-4" />
                 <span>{error}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Published Projects Section */}
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                <Rocket className="w-5 h-5 text-cyan-400" />
+              </div>
+              <h2 className="text-xl font-bold">Proyectos Publicados</h2>
+              <span className="text-xs px-2 py-1 rounded-full bg-zinc-800 text-zinc-400 border border-white/5 font-bold">
+                {publishedSites.length}
+              </span>
+            </div>
+
+            {fetchingSites ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-48 rounded-3xl bg-zinc-900/40 border border-white/5 animate-pulse" />
+                ))}
+              </div>
+            ) : publishedSites.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {publishedSites.map((site) => (
+                  <div 
+                    key={site.id} 
+                    className="group relative bg-zinc-900/40 border border-white/5 rounded-3xl p-5 hover:bg-zinc-800/60 transition-all hover:border-cyan-500/30 overflow-hidden"
+                  >
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                          <Globe className="w-5 h-5 text-zinc-400 group-hover:text-cyan-400 transition-colors" />
+                        </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => window.open(`/editor/${site.id}`, "_blank")}
+                            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+                            title="Editar Proyecto"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <h3 className="font-bold text-zinc-200 line-clamp-1 mb-1">Proyecto #{site.id}</h3>
+                        <p className="text-xs text-zinc-500 line-clamp-1">{site.url}</p>
+                      </div>
+
+                      <div className="mt-auto flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                          <Clock className="w-3 h-3" />
+                          {new Date(site.publishedAt || site.createdAt).toLocaleDateString()}
+                        </div>
+                        <button 
+                          onClick={() => {
+                            const blob = new Blob([site.html], { type: "text/html" });
+                            const url = URL.createObjectURL(blob);
+                            window.open(url, "_blank");
+                          }}
+                          className="flex items-center gap-2 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
+                        >
+                          Ver Sitio <ExternalLink className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-zinc-900/20 border border-white/5 border-dashed rounded-3xl p-12 text-center">
+                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                  <Rocket className="w-6 h-6 text-zinc-600" />
+                </div>
+                <h3 className="text-zinc-400 font-bold mb-1">No hay proyectos publicados</h3>
+                <p className="text-zinc-600 text-sm">Clona un sitio y dale a "Publicar" para que aparezca aquí.</p>
               </div>
             )}
           </div>

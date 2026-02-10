@@ -37,3 +37,19 @@ export async function PUT(
     return NextResponse.json({ error: "Failed to update site" }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const success = sitesStorage.publish(id);
+    if (!success) {
+      return NextResponse.json({ error: "Site not found" }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to publish site" }, { status: 500 });
+  }
+}

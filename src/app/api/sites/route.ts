@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { sitesStorage } from "@/lib/sitesStorage";
 
+export async function GET() {
+  const sites = sitesStorage.getAll().filter(s => s.published);
+  return NextResponse.json(sites);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -16,6 +21,7 @@ export async function POST(request: NextRequest) {
       html,
       url,
       createdAt: Date.now(),
+      published: false,
     });
 
     return NextResponse.json({ siteId });
