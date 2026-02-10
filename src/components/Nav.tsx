@@ -34,9 +34,7 @@ export default function Nav() {
 
   const navLinks = useMemo(() => {
     if (!session) {
-      return [
-        { name: t("nav.home"), href: "/", emoji: "" },
-      ];
+      return [];
     }
 
     return [
@@ -80,28 +78,51 @@ export default function Nav() {
         </nav>
 
         {/* Auth - Top Right */}
-        <div className="fixed top-8 right-8 z-50 flex items-center gap-4">
+        <div className="fixed top-8 right-8 z-50 flex items-center gap-6">
           {!session ? (
-            <Link
-              href="/auth?tab=register"
-              className="flex items-center gap-2 text-sm font-medium hover:text-black dark:hover:text-white text-muted-foreground dark:text-muted transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <>
+              <Link
+                href="/auth?tab=login"
+                className="nav-link-glow flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-zinc-400 transition-all"
               >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              {t("nav.create_account")}
-            </Link>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+                {t("nav.login")}
+              </Link>
+              <Link
+                href="/auth?tab=register"
+                className="nav-link-glow flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-zinc-400 transition-all"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                {t("nav.create_account")}
+              </Link>
+            </>
           ) : (
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted">{session.email}</span>
@@ -217,12 +238,20 @@ export default function Nav() {
 
               <div className="mt-8 flex flex-col gap-4">
                 {!session ? (
-                  <Link
-                    href="/auth?tab=register"
-                    className="btn btn-primary w-full py-4 text-lg rounded-full"
-                  >
-                    {t("nav.start_now")}
-                  </Link>
+                  <>
+                    <Link
+                      href="/auth?tab=login"
+                      className="btn btn-secondary w-full py-4 text-lg rounded-full text-center hover:scale-105 transition-transform"
+                    >
+                      {t("nav.login")}
+                    </Link>
+                    <Link
+                      href="/auth?tab=register"
+                      className="btn btn-primary w-full py-4 text-lg rounded-full text-center hover:scale-105 transition-transform"
+                    >
+                      {t("nav.create_account")}
+                    </Link>
+                  </>
                 ) : (
                   <button
                     onClick={logout}

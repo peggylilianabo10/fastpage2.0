@@ -337,21 +337,23 @@ details[open] summary .text-gold-iridescent {
   background: linear-gradient(
     90deg,
     #ffd700,
+    #fff7ad,
     #fdb931,
     #ffffff,
     #fdb931,
+    #fff7ad,
     #ffd700
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent !important;
-  animation: iridescent-gold 3s linear infinite;
+  animation: iridescent-gold 2s linear infinite;
   text-shadow: 
-    0 0 10px rgba(255, 215, 0, 0.4),
-    0 0 20px rgba(255, 165, 0, 0.2);
-  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
-  transform: translateY(-1px);
+    0 0 15px rgba(255, 215, 0, 0.6),
+    0 0 30px rgba(255, 165, 0, 0.3);
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+  transform: translateY(-2px) scale(1.05);
 }
 
 .nav-link-glow::after {
@@ -373,13 +375,13 @@ details[open] summary .text-gold-iridescent {
 }
 
 @keyframes iridescent-nav {
-  0% { filter: hue-rotate(0deg) brightness(1) drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); }
-  50% { filter: hue-rotate(20deg) brightness(1.3) drop-shadow(0 0 12px rgba(255, 215, 0, 0.8)); }
-  100% { filter: hue-rotate(0deg) brightness(1) drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); }
+  0% { filter: hue-rotate(0deg) brightness(1) drop-shadow(0 0 8px rgba(255, 215, 0, 0.6)); }
+  50% { filter: hue-rotate(30deg) brightness(1.5) drop-shadow(0 0 18px rgba(255, 215, 0, 0.9)); }
+  100% { filter: hue-rotate(0deg) brightness(1) drop-shadow(0 0 8px rgba(255, 215, 0, 0.6)); }
 }
 
 .nav-link-glow:hover {
-  animation: iridescent-nav 3s infinite linear;
+  animation: iridescent-nav 2s infinite linear;
 }
 
 @layer utilities {
