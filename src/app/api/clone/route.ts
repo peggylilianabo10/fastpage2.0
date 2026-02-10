@@ -10,66 +10,104 @@ function isValidHttpUrl(url: string): boolean {
 }
 
 function sanitizeHtml(html: string, baseUrl: string): string {
-  // We no longer remove scripts to allow modern JS-heavy sites to render in the preview.
-  // The safety is handled by the iframe sandbox on the frontend.
   let sanitized = html;
 
-  // Ensure base tag exists for resolving relative URLs (CSS, images, scripts)
+  // 1. Remove frame-busting scripts that redirect when in an iframe
+  sanitized = sanitized.replace(/(if\s*\(window\.top\s*!==\s*window\.self\)|if\s*\(top\s*!==\s*self\)|if\s*\(window\.self\s*!==\s*window\.top\)).*?\{.*?window\.top\.location.*?=.*?window\.self\.location.*?\}|top\.location\.href\s*=\s*location\.href/gi, '/* frame-buster removed */');
+  
+  // 2. Remove Content Security Policy and X-Frame-Options meta tags
+  sanitized = sanitized.replace(/<meta\s+http-equiv=["'](content-security-policy|x-frame-options)["'].*?>/gi, '<!-- security-meta removed -->');
+
+  // 3. Remove integrity and crossorigin attributes
+  sanitized = sanitized.replace(/\s+integrity=["'].*?["']/gi, '');
+  sanitized = sanitized.replace(/\s+crossorigin=["'].*?["']/gi, '');
+
+  // 4. Fix relative URLs in inline styles
+  sanitized = sanitized.replace(/url\(['"]?(\/[^'"]+)['"]?\)/gi, (match, p1) => {
+    if (p1.startsWith('//')) return match;
+    try {
+      return `url("${new URL(p1, baseUrl).href}")`;
+    } catch (e) { return match; }
+  });
+
+  // 5. Ensure base tag exists
   const baseTag = `<base href="${baseUrl}">`;
   
-  // Inject a script to handle relative links and media that might bypass <base>
+  // 5. Advanced Resource Fixer Script
   const fixResourcesScript = `
     <script>
       (function() {
         const baseUrl = "${baseUrl}";
-        // Function to fix relative URLs
         const fixUrl = (url) => {
-          if (!url || url.startsWith('http') || url.startsWith('//') || url.startsWith('data:')) return url;
+          if (!url || url.startsWith('http') || url.startsWith('//') || url.startsWith('data:') || url.startsWith('blob:')) return url;
           try {
             return new URL(url, baseUrl).href;
           } catch(e) { return url; }
         };
 
-        // Fix existing elements
-        document.querySelectorAll('img, video, audio, source, link, script').forEach(el => {
-          if (el.src) el.src = fixUrl(el.getAttribute('src'));
-          if (el.href) el.href = fixUrl(el.getAttribute('href'));
-          if (el.srcset) {
-            el.srcset = el.getAttribute('srcset').split(',').map(s => {
-              const [u, d] = s.trim().split(' ');
-              return fixUrl(u) + (d ? ' ' + d : '');
-            }).join(', ');
-          }
-        });
+        const fixAllElements = () => {
+          document.querySelectorAll('img, video, audio, source, link, script, a, iframe, use').forEach(el => {
+            if (el.src) {
+              const originalSrc = el.getAttribute('src');
+              if (originalSrc && !originalSrc.startsWith('http')) {
+                el.src = fixUrl(originalSrc);
+              }
+            }
+            if (el.href) {
+              const originalHref = el.getAttribute('href');
+              if (originalHref && !originalHref.startsWith('http') && !originalHref.startsWith('#')) {
+                el.href = fixUrl(originalHref);
+              }
+            }
+            if (el.srcset) {
+              el.srcset = el.getAttribute('srcset').split(',').map(s => {
+                const parts = s.trim().split(' ');
+                if (parts.length > 0) {
+                  parts[0] = fixUrl(parts[0]);
+                }
+                return parts.join(' ');
+              }).join(', ');
+            }
+            // Fix SVG <use> tags
+            if (el.tagName === 'use' && el.getAttribute('xlink:href')) {
+              el.setAttribute('xlink:href', fixUrl(el.getAttribute('xlink:href')));
+            }
+          });
+        };
 
-        // Intercept future dynamically added elements
+        // Initial fix
+        fixAllElements();
+
+        // MutationObserver for dynamic content (Ajax, lazy load)
         const observer = new MutationObserver((mutations) => {
           mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
-              if (node.nodeType === 1) { // Element
-                if (node.src) node.src = fixUrl(node.getAttribute('src'));
-                if (node.href) node.href = fixUrl(node.getAttribute('href'));
-                node.querySelectorAll && node.querySelectorAll('img, video, audio, source, link, script').forEach(el => {
-                  if (el.src) el.src = fixUrl(el.getAttribute('src'));
-                  if (el.href) el.href = fixUrl(el.getAttribute('href'));
-                });
+              if (node.nodeType === 1) {
+                fixAllElements();
               }
             });
           });
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
+
+        // Override window.top to trick frame-busting scripts that we are the top window
+        try {
+          Object.defineProperty(window, 'top', { get: function() { return window; } });
+          Object.defineProperty(window, 'parent', { get: function() { return window; } });
+        } catch(e) {}
       })();
     </script>
   `;
 
-  if (!/<base\s/i.test(sanitized)) {
-    // Insert base tag and our fix script right after <head> or at the beginning
-    if (/<head(.*?)>/i.test(sanitized)) {
-      sanitized = sanitized.replace(/<head(.*?)>/i, (m) => `${m}\n${baseTag}\n${fixResourcesScript}`);
-    } else {
-      sanitized = baseTag + fixResourcesScript + sanitized;
-    }
+  // Inject into <head>
+  if (/<head(.*?)>/i.test(sanitized)) {
+    sanitized = sanitized.replace(/<head(.*?)>/i, (m) => `${m}\n${baseTag}\n${fixResourcesScript}`);
+  } else if (/<html(.*?)>/i.test(sanitized)) {
+    sanitized = sanitized.replace(/<html(.*?)>/i, (m) => `${m}\n<head>\n${baseTag}\n${fixResourcesScript}\n</head>`);
+  } else {
+    sanitized = baseTag + fixResourcesScript + sanitized;
   }
+
   return sanitized;
 }
 
@@ -85,46 +123,64 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
     const res = await fetch(target, {
       method: "GET",
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1"
       },
       redirect: "follow",
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       return new Response(
-        JSON.stringify({ error: `Error al obtener la URL: ${res.status}` }),
-        { status: 502, headers: { "Content-Type": "application/json" } },
+        JSON.stringify({ error: `Error al obtener la URL (${res.status}): ${res.statusText}` }),
+        { status: res.status, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    let html = await res.text();
-
-    // 1. Remove Content Security Policy to allow preview
-    html = html.replace(/<meta http-equiv="Content-Security-Policy".*?>/gi, "");
-    
-    // 2. Remove problematic scripts that block iframe nesting (Frame busting)
-    html = html.replace(/if\s*\(top\s*!==\s*self\).*?top\.location\s*=\s*self\.location/gi, "if(false)");
-    html = html.replace(/window\.top\s*!==\s*window\.self/gi, "false");
-
-    // Limit payload size to 2MB
-    const MAX = 2 * 1024 * 1024;
-    if (html.length > MAX) {
-      html = html.slice(0, MAX);
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("text/html")) {
+      return new Response(
+        JSON.stringify({ error: "La URL no devolvió una página HTML válida" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    const sanitized = sanitizeHtml(html, target);
+    const html = await res.text();
+    // Use the final URL after redirects for base tag
+    const finalUrl = res.url || target;
+    const sanitizedHtml = sanitizeHtml(html, finalUrl);
 
-    return new Response(sanitized, {
+    return new Response(sanitizedHtml, {
       status: 200,
-      headers: { "Content-Type": "text/html; charset=utf-8" },
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "X-Cloned-From": finalUrl,
+      },
     });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: "Fallo de red" }), {
+  } catch (error: any) {
+    console.error("Clone error:", error);
+    const message = error.name === 'AbortError' ? "La solicitud tardó demasiado" : "Error de conexión al intentar clonar el sitio";
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

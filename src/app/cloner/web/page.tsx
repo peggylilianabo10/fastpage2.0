@@ -233,7 +233,7 @@ export default function WebClonerPage() {
               <iframe
                 title="preview"
                 className="w-full h-[70vh] bg-white"
-                sandbox="allow-scripts allow-forms allow-popups allow-modals"
+                sandbox="allow-scripts allow-forms allow-popups allow-modals allow-same-origin"
                 srcDoc={html}
               />
             )}
