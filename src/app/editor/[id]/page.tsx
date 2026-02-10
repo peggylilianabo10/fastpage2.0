@@ -23,14 +23,42 @@ export default function EditorPage() {
 
     const doc = iframe.contentDocument;
     
-    // 1. Deshabilitar todos los enlaces para evitar navegación
-    const links = doc.querySelectorAll("a");
-    links.forEach(link => {
-      link.addEventListener("click", (e) => e.preventDefault());
-      link.style.cursor = "default";
+    // 1. Deshabilitar todos los enlaces para evitar navegación y permitir edición
+    const interactiveElements = doc.querySelectorAll("a, button, input[type='submit'], input[type='button']");
+    interactiveElements.forEach(el => {
+      if (el.tagName === "A") {
+        el.addEventListener("click", (e) => e.preventDefault());
+        (el as HTMLElement).style.cursor = "default";
+      }
+      (el as HTMLElement).contentEditable = isVisualEditActive ? "true" : "false";
     });
 
-    // 2. Hacer el body editable o elementos específicos
+    // 2. Manejo de imágenes
+    const images = doc.querySelectorAll("img");
+    images.forEach(img => {
+      if (isVisualEditActive) {
+        img.style.cursor = "pointer";
+        img.title = "Haz clic para cambiar la imagen";
+        
+        // Evitar que el clic se propague si hay enlaces
+        img.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const newUrl = prompt("Introduce la URL de la nueva imagen:", img.src);
+          if (newUrl && newUrl !== img.src) {
+            img.src = newUrl;
+            // Forzar actualización visual si es necesario
+            img.classList.add("img-updated");
+          }
+        });
+      } else {
+        img.style.cursor = "";
+        img.title = "";
+      }
+    });
+
+    // 3. Hacer el body editable o elementos específicos
     if (isVisualEditActive) {
       doc.body.contentEditable = "true";
       doc.body.style.outline = "none";
@@ -42,6 +70,10 @@ export default function EditorPage() {
         [contenteditable="true"]:hover {
           outline: 2px dashed #06b6d4 !important;
           outline-offset: 2px;
+        }
+        img:hover {
+          outline: 3px solid #06b6d4 !important;
+          filter: brightness(0.8);
         }
         * {
           user-select: auto !important;
