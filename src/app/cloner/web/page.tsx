@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-import { Globe, ArrowRight, AlertCircle, ExternalLink, Clock, Trash2, Edit3, Rocket } from "lucide-react";
+import { Globe, ArrowRight, AlertCircle, ExternalLink, Clock, Trash2, Edit3, Rocket, HelpCircle, BookOpen, ShieldCheck, Zap } from "lucide-react";
 
 function isValidUrl(url: string) {
   try {
@@ -98,9 +98,92 @@ export default function WebClonerPage() {
     return () => clearTimeout(handler);
   }, [debouncedUrl]);
 
+  const [showGuide, setShowGuide] = useState(false);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <main className="flex-grow pt-24 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Help Button */}
+        <button 
+          onClick={() => setShowGuide(true)}
+          className="fixed bottom-8 right-8 z-50 w-14 h-14 bg-zinc-900 border border-white/10 rounded-2xl flex items-center justify-center text-cyan-400 shadow-2xl hover:bg-zinc-800 transition-all active:scale-95 group"
+        >
+          <HelpCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+        </button>
+
+        {/* User Manual Modal */}
+        {showGuide && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-zinc-900 border border-white/10 rounded-[32px] w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl">
+              <div className="p-8 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold">Manual de Usuario: Clonador Web PRO</h2>
+                </div>
+                <button 
+                  onClick={() => setShowGuide(false)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-zinc-500 hover:text-white"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-grow overflow-y-auto p-8 space-y-8 custom-scrollbar">
+                <section>
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-cyan-400" />
+                    1. Clonación de Sitios
+                  </h3>
+                  <p className="text-zinc-400 leading-relaxed">
+                    Ingresa cualquier URL válida en el campo principal. Nuestro motor inteligente extraerá el HTML, CSS y recursos, sanitizando el código para que sea completamente editable.
+                  </p>
+                </section>
+                <section>
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <Edit3 className="w-5 h-5 text-cyan-400" />
+                    2. Editor Visual Intuitivo
+                  </h3>
+                  <p className="text-zinc-400 leading-relaxed">
+                    Haz clic en cualquier elemento (texto, imágenes, fondos) para editarlo. Aparecerá una barra de herramientas flotante para modificar colores, tamaños y estilos en tiempo real.
+                  </p>
+                </section>
+                <section>
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-cyan-400" />
+                    3. Guardado Automático
+                  </h3>
+                  <p className="text-zinc-400 leading-relaxed">
+                    Tus cambios se guardan automáticamente cada 15 segundos mientras editas. También puedes usar el botón "Guardar" para asegurar tus cambios manualmente.
+                  </p>
+                </section>
+                <section>
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <Rocket className="w-5 h-5 text-cyan-400" />
+                    4. Publicación en un Clic
+                  </h3>
+                  <p className="text-zinc-400 leading-relaxed">
+                    Una vez satisfecho con los cambios, pulsa "Publicar". El sistema optimizará el código, validará los recursos y generará la versión final de tu landing page.
+                  </p>
+                </section>
+                <div className="bg-cyan-500/5 border border-cyan-500/10 rounded-2xl p-4 flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-cyan-400 mt-0.5" />
+                  <p className="text-xs text-cyan-400/80 leading-relaxed">
+                    <strong>Nota de Seguridad:</strong> Todos los sitios clonados pasan por un proceso de limpieza para eliminar scripts maliciosos y rastreadores, garantizando que tu nueva página sea rápida y segura.
+                  </p>
+                </div>
+              </div>
+              <div className="p-8 border-t border-white/10 bg-black/20">
+                <button 
+                  onClick={() => setShowGuide(false)}
+                  className="w-full py-4 rounded-2xl bg-cyan-500 text-black font-bold hover:bg-cyan-400 transition-all"
+                >
+                  Entendido, ¡empezar a clonar!
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="fixed inset-0 pointer-events-none">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(0,255,255,0.03),transparent_70%)]" />
           <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-cyan-600/5 rounded-full blur-[90px]" />

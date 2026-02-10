@@ -14,17 +14,21 @@ export async function GET(request: NextRequest) {
 
     // 2. Recuperar todos los sitios (clonados, creados, plantillas) asociados al usuario
     // Por ahora, consultamos la colección 'cloned_sites' y 'projects' (si existe)
-    const sitesSnapshot = await adminDb.collection("cloned_sites")
-      .where("userId", "==", userId)
-      .get();
+    let sites: any[] = [];
     
-    // Si tienes otra colección para proyectos del constructor:
-    // const projectsSnapshot = await adminDb.collection("projects").where("userId", "==", userId).get();
-
-    const sites = sitesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    if (adminDb) {
+      const sitesSnapshot = await adminDb.collection("cloned_sites")
+        .where("userId", "==", userId)
+        .get();
+      
+      sites = sitesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } else {
+      console.warn("[Metrics API] Admin SDK not initialized. Metrics might be empty or simulated.");
+      // Opcionalmente podrías intentar usar el cliente SDK aquí si es necesario
+    }
 
     // 3. Generar métricas dinámicas (Simuladas basadas en los sitios reales)
     // En un sistema real, estas métricas vendrían de una colección 'analytics'

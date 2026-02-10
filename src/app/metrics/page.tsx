@@ -21,7 +21,8 @@ import {
   ExternalLink,
   Lightbulb,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  CheckCircle
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -388,7 +389,7 @@ export default function MetricsPage() {
                   {[
                     { title: "Optimiza Imágenes", desc: "Tus páginas clonadas podrían cargar un 20% más rápido.", icon: <Zap className="w-5 h-5 text-amber-400" /> },
                     { title: "Mejora el SEO", desc: "Agrega etiquetas meta para aumentar el tráfico orgánico.", icon: <Search className="w-5 h-5 text-blue-400" /> },
-                    { title: "Smart CTA", desc: "Botones naranjas convierten 15% mejor en tus plantillas.", icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" /> }
+                    { title: "Smart CTA", desc: "Botones naranjas convierten 15% mejor en tus plantillas.", icon: <CheckCircle className="w-5 h-5 text-emerald-400" /> }
                   ].map((tip, i) => (
                     <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all group">
                       <div className="flex-shrink-0 group-hover:scale-110 transition-transform">{tip.icon}</div>

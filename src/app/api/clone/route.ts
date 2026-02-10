@@ -12,100 +12,146 @@ function isValidHttpUrl(url: string): boolean {
 function sanitizeHtml(html: string, baseUrl: string): string {
   let sanitized = html;
 
-  // 1. Remove frame-busting scripts that redirect when in an iframe
+  // 1. Remove existing <base> tags to avoid conflicts
+  sanitized = sanitized.replace(/<base\s+[^>]*?>/gi, '<!-- original base removed -->');
+
+  // 2. Remove frame-busting scripts
   sanitized = sanitized.replace(/(if\s*\(window\.top\s*!==\s*window\.self\)|if\s*\(top\s*!==\s*self\)|if\s*\(window\.self\s*!==\s*window\.top\)).*?\{.*?window\.top\.location.*?=.*?window\.self\.location.*?\}|top\.location\.href\s*=\s*location\.href/gi, '/* frame-buster removed */');
   
-  // 2. Remove Content Security Policy and X-Frame-Options meta tags
-  sanitized = sanitized.replace(/<meta\s+http-equiv=["'](content-security-policy|x-frame-options)["'].*?>/gi, '<!-- security-meta removed -->');
+  // 3. Remove Content Security Policy and X-Frame-Options
+  sanitized = sanitized.replace(/<meta\s+http-equiv=["'](content-security-policy|x-frame-options|refresh)["'].*?>/gi, '<!-- security-meta removed -->');
 
-  // 3. Remove integrity and crossorigin attributes
+  // 4. Remove integrity and crossorigin attributes
   sanitized = sanitized.replace(/\s+integrity=["'].*?["']/gi, '');
   sanitized = sanitized.replace(/\s+crossorigin=["'].*?["']/gi, '');
 
-  // 4. Fix relative URLs in inline styles
-  sanitized = sanitized.replace(/url\(['"]?(\/[^'"]+)['"]?\)/gi, (match, p1) => {
-    if (p1.startsWith('//')) return match;
+  // 5. Pre-fix relative URLs in HTML attributes (src, href, srcset, action)
+  const urlAttributes = ['src', 'href', 'srcset', 'action', 'data-src', 'data-href', 'poster'];
+  urlAttributes.forEach(attr => {
+    // Excluir URLs que ya son absolutas, fragmentos, esquemas data:, o javascript:
+    const regex = new RegExp(`(\\s${attr}=["'])(?!https?://|//|data:|#|javascript:|blob:)([^"']+)`, 'gi');
+    sanitized = sanitized.replace(regex, (match, prefix, path) => {
+      try {
+        // Ignorar si el path parece una variable de template (ej: {{...}} o %...%)
+        if (path.startsWith('{{') || path.startsWith('%')) return match;
+        
+        const absoluteUrl = new URL(path, baseUrl).href;
+        return `${prefix}${absoluteUrl}`;
+      } catch (e) {
+        return match;
+      }
+    });
+  });
+
+  // 6. Fix relative URLs in inline styles (background-image: url(...))
+  sanitized = sanitized.replace(/url\(['"]?(?!(https?:\/\/|\/\/|data:))([^'"]+)['"]?\)/gi, (match, p1, p2) => {
     try {
-      return `url("${new URL(p1, baseUrl).href}")`;
+      const path = p2 || p1;
+      if (path.startsWith('#') || path.startsWith('data:')) return match;
+      return `url("${new URL(path, baseUrl).href}")`;
     } catch (e) { return match; }
   });
 
-  // 5. Ensure base tag exists
+  // 7. Ensure base tag and viewport meta exist
   const baseTag = `<base href="${baseUrl}">`;
+  const viewportMeta = `<meta name="viewport" content="width=device-width, initial-scale=1.0">`;
   
-  // 5. Advanced Resource Fixer Script
+  // 8. Advanced Resource Fixer Script (as fallback and for dynamic content)
   const fixResourcesScript = `
-    <script>
+    <script id="editor-resource-fixer">
       (function() {
         const baseUrl = "${baseUrl}";
         const fixUrl = (url) => {
-          if (!url || url.startsWith('http') || url.startsWith('//') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+          if (!url || url.startsWith('http') || url.startsWith('//') || url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('#') || url.startsWith('javascript:')) return url;
           try {
             return new URL(url, baseUrl).href;
           } catch(e) { return url; }
         };
 
         const fixAllElements = () => {
-          document.querySelectorAll('img, video, audio, source, link, script, a, iframe, use').forEach(el => {
+          document.querySelectorAll('img, video, audio, source, link, script, a, iframe, use, form, [data-src], [data-href]').forEach(el => {
+            // Fix images and media
             if (el.src) {
               const originalSrc = el.getAttribute('src');
-              if (originalSrc && !originalSrc.startsWith('http')) {
+              if (originalSrc && !originalSrc.startsWith('http') && !originalSrc.startsWith('//') && !originalSrc.startsWith('data:')) {
                 el.src = fixUrl(originalSrc);
               }
             }
+            // Fix links
             if (el.href) {
               const originalHref = el.getAttribute('href');
-              if (originalHref && !originalHref.startsWith('http') && !originalHref.startsWith('#')) {
+              if (originalHref && !originalHref.startsWith('http') && !originalHref.startsWith('//') && !originalHref.startsWith('#') && !originalHref.startsWith('javascript:')) {
                 el.href = fixUrl(originalHref);
               }
             }
+            // Fix source sets
             if (el.srcset) {
-              el.srcset = el.getAttribute('srcset').split(',').map(s => {
-                const parts = s.trim().split(' ');
-                if (parts.length > 0) {
-                  parts[0] = fixUrl(parts[0]);
-                }
-                return parts.join(' ');
-              }).join(', ');
+              const originalSrcset = el.getAttribute('srcset');
+              if (originalSrcset) {
+                el.srcset = originalSrcset.split(',').map(s => {
+                  const parts = s.trim().split(/\s+/);
+                  if (parts.length > 0 && parts[0] && !parts[0].startsWith('http') && !parts[0].startsWith('//')) {
+                    parts[0] = fixUrl(parts[0]);
+                  }
+                  return parts.join(' ');
+                }).join(', ');
+              }
             }
-            // Fix SVG <use> tags
-            if (el.tagName === 'use' && el.getAttribute('xlink:href')) {
-              el.setAttribute('xlink:href', fixUrl(el.getAttribute('xlink:href')));
+            // Fix form actions
+            if (el.action) {
+               const originalAction = el.getAttribute('action');
+               if (originalAction && !originalAction.startsWith('http')) {
+                 el.action = fixUrl(originalAction);
+               }
+            }
+            // Fix data attributes
+            ['data-src', 'data-href'].forEach(attr => {
+              if (el.hasAttribute(attr)) {
+                const val = el.getAttribute(attr);
+                if (val && !val.startsWith('http')) {
+                  el.setAttribute(attr, fixUrl(val));
+                }
+              }
+            });
+          });
+          
+          // Fix background images in styles
+          document.querySelectorAll('[style*="url("]').forEach(el => {
+            const style = el.getAttribute('style');
+            if (style.includes('url(')) {
+              const newStyle = style.replace(/url\(['"]?([^'"]+)['"]?\)/gi, (match, url) => {
+                if (url.startsWith('http') || url.startsWith('//') || url.startsWith('data:')) return match;
+                return 'url("' + fixUrl(url) + '")';
+              });
+              el.setAttribute('style', newStyle);
             }
           });
         };
 
-        // Initial fix
+        // Run immediately and then on load
         fixAllElements();
-
-        // MutationObserver for dynamic content (Ajax, lazy load)
+        window.addEventListener('load', fixAllElements);
+        
+        // Observe changes
         const observer = new MutationObserver((mutations) => {
+          let shouldFix = false;
           mutations.forEach(mutation => {
-            mutation.addedNodes.forEach(node => {
-              if (node.nodeType === 1) {
-                fixAllElements();
-              }
-            });
+            if (mutation.addedNodes.length > 0) shouldFix = true;
           });
+          if (shouldFix) fixAllElements();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
-
-        // Override window.top to trick frame-busting scripts that we are the top window
-        try {
-          Object.defineProperty(window, 'top', { get: function() { return window; } });
-          Object.defineProperty(window, 'parent', { get: function() { return window; } });
-        } catch(e) {}
       })();
     </script>
   `;
 
   // Inject into <head>
   if (/<head(.*?)>/i.test(sanitized)) {
-    sanitized = sanitized.replace(/<head(.*?)>/i, (m) => `${m}\n${baseTag}\n${fixResourcesScript}`);
+    sanitized = sanitized.replace(/<head(.*?)>/i, (m) => `${m}\n${baseTag}\n${viewportMeta}\n${fixResourcesScript}`);
   } else if (/<html(.*?)>/i.test(sanitized)) {
-    sanitized = sanitized.replace(/<html(.*?)>/i, (m) => `${m}\n<head>\n${baseTag}\n${fixResourcesScript}\n</head>`);
+    sanitized = sanitized.replace(/<html(.*?)>/i, (m) => `${m}\n<head>\n${baseTag}\n${viewportMeta}\n${fixResourcesScript}\n</head>`);
   } else {
-    sanitized = baseTag + fixResourcesScript + sanitized;
+    sanitized = baseTag + viewportMeta + fixResourcesScript + sanitized;
   }
 
   return sanitized;
@@ -151,8 +197,13 @@ export async function GET(request: NextRequest) {
     clearTimeout(timeoutId);
 
     if (!res.ok) {
+      let errorMessage = `Error al obtener la URL (${res.status})`;
+      if (res.status === 403) errorMessage = "Acceso denegado: El sitio bloquea solicitudes automatizadas (403 Forbidden).";
+      if (res.status === 404) errorMessage = "Sitio no encontrado: La URL ingresada no existe (404 Not Found).";
+      if (res.status >= 500) errorMessage = "El servidor del sitio destino está experimentando problemas (5xx Error).";
+      
       return new Response(
-        JSON.stringify({ error: `Error al obtener la URL (${res.status}): ${res.statusText}` }),
+        JSON.stringify({ error: errorMessage }),
         { status: res.status, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -169,9 +220,24 @@ export async function GET(request: NextRequest) {
     
     // 6. Optimization: Remove non-essential large content to stay within Firestore limits
     let optimizedHtml = html;
-    if (Buffer.byteLength(optimizedHtml, 'utf8') > 800000) { // If over 800KB
-      // Remove large SVG definitions if possible or excessive comments
-      optimizedHtml = optimizedHtml.replace(/<!--[\s\S]*?-->/g, ''); // Remove comments
+    const initialSize = Buffer.byteLength(optimizedHtml, 'utf8');
+    
+    if (initialSize > 800000) { // If over 800KB
+      // Remove comments
+      optimizedHtml = optimizedHtml.replace(/<!--[\s\S]*?-->/g, '');
+      
+      // If still too big, remove large SVG symbols if they are many
+      if (Buffer.byteLength(optimizedHtml, 'utf8') > 900000) {
+        optimizedHtml = optimizedHtml.replace(/<svg[\s\S]*?<\/svg>/gi, (m) => {
+          return m.length > 5000 ? '<!-- large svg removed -->' : m;
+        });
+      }
+
+      // Final safety check for Firestore (max 1MB per doc)
+      if (Buffer.byteLength(optimizedHtml, 'utf8') > 950000) {
+        // Remove all scripts if still over limit - better to have a static page than a crash
+        optimizedHtml = optimizedHtml.replace(/<script[\s\S]*?<\/script>/gi, '<!-- script removed for size -->');
+      }
     }
 
     // Use the final URL after redirects for base tag
