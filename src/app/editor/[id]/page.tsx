@@ -13,6 +13,7 @@ export default function EditorPage() {
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [isVisualEditActive, setIsVisualEditActive] = useState(true);
+  const [showSaved, setShowSaved] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Inyectar script de edición en el iframe
