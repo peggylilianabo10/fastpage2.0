@@ -14,6 +14,7 @@ import {
   GoogleAuthProvider,
   updateProfile,
   onAuthStateChanged,
+  fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 
@@ -40,6 +41,7 @@ function AuthContent() {
   const [tab, setTab] = useState<"login" | "register">("login");
   const [toast, setToast] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isGoogleError, setIsGoogleError] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("tab") === "register") {
@@ -175,14 +177,28 @@ function AuthContent() {
       }
     } catch (error: any) {
       console.error(error);
+
+      // Detectar si el usuario debe usar Google
+      try {
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+        if (methods.includes("google.com") && !methods.includes("password")) {
+          setIsGoogleError(true);
+          showToast("¡Usa Google! Tu cuenta está vinculada a Google 👆 🚫");
+          setTimeout(() => setIsGoogleError(false), 3000);
+          return;
+        }
+      } catch (e) {
+        // Ignorar error de fetchSignInMethods (puede fallar por políticas de privacidad)
+      }
+
       if (
         error.code === "auth/user-not-found" ||
         error.code === "auth/wrong-password" ||
         error.code === "auth/invalid-credential"
       ) {
-        showToast("Credenciales inválidas. Si usaste Google, usa el botón de abajo.");
+        showToast("Credenciales inválidas. Si usaste Google, usa el botón de abajo. ❌");
       } else {
-        showToast("Error al iniciar sesión: " + error.message);
+        showToast("Error al iniciar sesión: " + error.message + " ⚠️");
       }
     }
   };
@@ -503,7 +519,11 @@ function AuthContent() {
             {/* Social Login */}
             <button
               onClick={handleGoogleLogin}
-              className="w-full bg-white text-black hover:bg-gray-200 transition-colors py-3.5 rounded-full font-medium flex items-center justify-center gap-3 shadow-lg"
+              className={`w-full transition-all duration-300 py-3.5 rounded-full font-medium flex items-center justify-center gap-3 shadow-lg ${
+                isGoogleError
+                  ? "bg-red-600 text-white animate-shake ring-4 ring-red-500/50"
+                  : "bg-white text-black hover:bg-gray-200"
+              }`}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
